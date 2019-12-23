@@ -29,6 +29,9 @@ I now added a lot of useful information from tables. The csv file contains more 
 ##### 23/12/2019
 I had a chance to update evolution levels. I will also add a table concerning moves learnt by leveling up. I have a plan to create a file, moves.csv, and add all the moves details later.
 
+##### 23/12/2019
+It was a boring night, so I completed the moves learnt by leveling up table. The code is getting a bit complicated so I will separate some functions later on.
+
 ---
 
 # TODO

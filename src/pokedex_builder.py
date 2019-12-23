@@ -131,6 +131,84 @@ def make_table(cleaned_table):
 
 	return pokedex_data, training, breeding, base_stats
 
+# Helper function to understand if a string is also a number
+
+
+def is_integer(str):
+	try:
+		int(str)
+		return True
+	except:
+		return False
+
+
+def get_move_table(chars):
+
+	# The aim of this function to empty the chars list whilst getting all the relevant information
+	# such as move type, move power and move accuracy
+
+	# Move type is handled here, the first capital string is the move type
+	# The data example is like this without the first digits
+	# { 40Flare BlitzFire 120 100 }
+	first_position = 0
+	for i in range(1, len(chars)):
+		if chars[i].isupper():
+			first_position = i
+
+	# This if statement is my own way of error handling, please don't ask any questions
+	if first_position == 0:
+		move_table = {
+			"move_level" 	: "move_level",
+			"move_name" 	: "SOMETHING'S WRONG",
+		}
+		return move_table
+
+	move_name = ""
+	for f in range(0, first_position):
+		move_name += chars.pop(0)
+	# Rest of the chars are type, power and accuracy. Fortunately they came in order,
+	# simple string manipulation is enough here.
+	rest = "".join(chars)
+	rest = rest.split(' ')
+	move_type = rest[0]
+	move_power = rest[1]
+	move_accuracy = rest[2]
+
+	# Creating all the content for move table. Move level is stored already so it's temporary here
+	move_table = {
+
+		"move_level" 	: "move_level",
+		"move_name" 	: move_name,
+		"move_type" 	: move_type,
+		"move_power" 	: move_power,
+		"move_accuracy": move_accuracy
+
+	}
+
+	return move_table
+
+
+def the_second_law(chars):
+
+	# Keeping the first word of the move also counting how many letters does it have
+	first_word = ""
+	counter = 0
+	for i in chars:
+		if i == ' ':
+			first_word += i
+			counter += 1
+			break
+		first_word += i
+		counter += 1
+	for i in range(0, counter):
+		chars.pop(0)
+	# After storing the first word and popping the characters from the array it's all very easy, logig is already done on get_move_table
+	move_table = get_move_table(chars)
+	second_word = move_table['move_name']
+	move_table.update({"move_name": first_word + second_word})
+
+	return move_table
+
 # THIS METHOD LIMITS THE LENGTH OF THE TABLE
 # ALTHOUGH THE FURTHER INFORMATION IS NOT NECESSARY FOR ME AT THE MOMENT, YOU CAN COMMENT THE BREAK AND ACCESS ALL THE DATA
 
@@ -154,8 +232,8 @@ def get_pokemon_details(name_dict):
 
 	counter = 1
 	for pokemon in name_dict:
-
 		print(pokemon)
+
 		# Create the html file to start for single pokedex entry
 		html = make_html(pokemon)
 		soup = BeautifulSoup(html.read(), "html5lib")
@@ -208,20 +286,88 @@ def get_pokemon_details(name_dict):
 
 		pokedex_data, training, breeding, base_stats = make_table(cleaned_table)
 
+		# Checking Moves learnt by level up table
+		for move in soup.findAll('div', attrs={'class': 'span-lg-6'}):
+			# Specifically storing the first table, otherwise the for loop gets other tables as well
+			i = move.find('div', attrs={'class': 'resp-scroll'})
+			# This is rather a complex way to get the best result from the html
+			moves = i.text.split('Lv. Move Type Cat. Power Acc. ')[1]
+			break
+		# moves is a single string so I divide them into pieces
+		moves = moves.split('\n')
+		# Inspecting every single move
+		moves.pop()  # The last item is empty, it's wise to pop that here
+
+		move_tables = []
+		# BEFORE: I BELIEVE THIS FOR LOOP WILL BE A BIT COMPLEX
+		for move in moves:
+			chars = list(move)  # Checking every character is necessary
+			counter_map = 0  # There will be two algorithms depending on the counter_map number. 2 will be straight-forward but 3, well, not too much
+			# Calculating counter_map
+			for char in chars:
+				if char == ' ':
+					counter_map += 1
+			# First algorithm
+			if counter_map == 2:
+				# Checking if the second integer is string (higher level move)
+				if is_integer(chars[1]):
+					# Since the level is two digits, I get the first two character, then pop them
+					move_level = chars[0] + chars[1]
+
+					chars.pop(0)
+					chars.pop(0)
+					# Sending a factored function to avoid mess
+					move_table = get_move_table(chars)
+					move_table.update({"move_level": int(move_level)})
+
+				else:
+					# The level is one digit, I only get the first character and pop it
+					move_level = chars[0]
+
+					chars.pop(0)
+
+					move_table = get_move_table(chars)
+					# Final change because I stored the level in the first place
+					move_table.update({"move_level": int(move_level)})
+
+			else:  # This else statement is for moves that contain more than a word
+
+				if is_integer(chars[1]):
+					# Same logic, I store the level and pop these characters
+					move_level = chars[0] + chars[1]
+
+					chars.pop(0)
+					chars.pop(0)
+
+					# Sending the rest of the characters to another function. Sorry, I couldn't find a proper name
+					move_table = the_second_law(chars)
+					move_table.update({"move_level": int(move_level)})
+
+				else:
+
+					move_level = chars[0]
+
+					chars.pop(0)
+
+					move_table = the_second_law(chars)
+					move_table.update({"move_level": int(move_level)})
+
+			move_tables.append(move_table)
+
 		arrange_data(pokemon, definition, evo_list, main_image,
-		             counter, pokedex_data, training, breeding, base_stats)
+		             counter, pokedex_data, training, breeding, base_stats, move_tables)
 		counter += 1
 
 # THIS METHOD MODIFIES THE DATA FOR FINAL ENTRY
 
 
-def arrange_data(pokemon, definition, evo_list, main_image, counter, pokedex_data, training, breeding, base_stats):
+def arrange_data(pokemon, definition, evo_list, main_image, counter, pokedex_data, training, breeding, base_stats, move_tables):
 
 	if len(evo_list) < 1:
 		evo_list = "No Evolution"
 
 	arranged_data = [counter, pokemon, definition, main_image,
-                  evo_list, pokedex_data, training, breeding, base_stats]
+                  evo_list, pokedex_data, training, breeding, base_stats, move_tables]
 	poke_dict.append(arranged_data)
 	# pokemon = Pokemon(counter, pokemon, definition, main_image, evo_list)
 
