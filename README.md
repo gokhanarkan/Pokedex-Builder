@@ -23,12 +23,15 @@ Huge thanks to https://pokemondb.net for providing the information.
 
 # UPDATES
 
-###### 21/12/2019
+##### 21/12/2019
 I now added a lot of useful information from tables. The csv file contains more than enough data for my app but I will try to scrape more in the future. At this time, I will create a client file to access the information easily for other people.
+
+##### 23/12/2019
+I had a chance to update evolution levels. I will also add a table concerning moves learnt by leveling up. I have a plan to create a file, moves.csv, and add all the moves details later.
 
 ---
 
 # TODO
 
 - Some data in tables missing for gen8. Pokemondb didn't provide these details yet, I'll try to find external source for similar information.
-- Evolution levels are missing. I will also update that field with before/after information and possibly stone evolutions.
+- moves.csv

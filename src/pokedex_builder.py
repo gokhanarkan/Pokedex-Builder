@@ -1,9 +1,12 @@
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from urllib.request import Request
-import csv, re
+import csv
+import re
 
 # I am currently not using the Pokemon object. Reference purposes only
+
+
 class Pokemon:
 	def __init__(self, pokeid, name, definition, image, evolution):
 		self.pokeid = pokeid
@@ -12,15 +15,20 @@ class Pokemon:
 		self.image = image
 		self.evolution = evolution
 
+
 poke_dict = []
 
 # THIS METHOD EXPORTS INFORMATION AS CSV FILE
+
+
 def export_csv(poke_dict):
 	with open("poke_dict.csv", "w") as file:
 		pokemon_writer = csv.writer(file)
 		pokemon_writer.writerows(poke_dict)
 
 # THIS METHOD CREATES A HTML PAGE FOR SCRAPING
+
+
 def make_html(pokemon):
 
 	# Extra caution for nidoran genders and flabebe
@@ -63,6 +71,8 @@ def make_html(pokemon):
 	return urlopen(url)
 
 # THIS METHOD GETS STRING WITH HTML CODE AND CLEANS WITH REGULAR EXPRESSION
+
+
 def clean_tags(raw_html):
 
 	cleanr = re.compile('<.*?>')
@@ -70,6 +80,8 @@ def clean_tags(raw_html):
 	return cleantext
 
 # THIS METHOD SCRAPES ALL THE POKEMONS CREATED FROM THE DIRECTORY
+
+
 def get_pokemon_names():
 
 	name_dict = []
@@ -84,6 +96,8 @@ def get_pokemon_names():
 	return name_dict
 
 # THIS METHOD CREATES TABLE OUT OF MESSY LIST OF INFORMATION
+
+
 def make_table(cleaned_table):
 
 	true_table = limit_table(cleaned_table)
@@ -119,6 +133,8 @@ def make_table(cleaned_table):
 
 # THIS METHOD LIMITS THE LENGTH OF THE TABLE
 # ALTHOUGH THE FURTHER INFORMATION IS NOT NECESSARY FOR ME AT THE MOMENT, YOU CAN COMMENT THE BREAK AND ACCESS ALL THE DATA
+
+
 def limit_table(cleaned_table):
 
 	true_table = []
@@ -132,6 +148,8 @@ def limit_table(cleaned_table):
 	return true_table
 
 # THIS METHOD SCRAPES THE IMPORTANT INFORMATION FROM POKEDEX PAGE
+
+
 def get_pokemon_details(name_dict):
 
 	counter = 1
@@ -150,21 +168,23 @@ def get_pokemon_details(name_dict):
 
 		# EVOLUTION NAMES OF THE POKEMON
 		evolution = []
-		for span in soup.findAll('span', attrs={'class': 'infocard-lg-data'}):
-			for name in span.findAll('a', attrs={'class': 'ent-name'}):
-				evolution.append(name.get_text())
+		for evo in soup.findAll('span', attrs={'class': 'infocard-lg-data'}):
+			evo = clean_tags(str(evo))
+			evo = evo.split(' ')
+			evolution.append(evo[1])
 
-		# IMAGES OF THE POKEMON
-		img = []
-		for span in soup.findAll('span', attrs={'class': 'infocard-lg-img'}):
-			for image in span.findAll('a'):
-				src = str(image).split('"')[7]
-				img.append(src)
+		# EVOLUTION STYLE LIKE WHEN OR HOW ETC.
+		evolution_styles = []
+		for evo in soup.findAll('span', attrs={'class': 'infocard-arrow'}):
+			evo = clean_tags(str(evo))
+			evolution_styles.append(evo)
 
-		# MATCHING IMAGE AND EVOLUTION
-		evo_and_image = []
-		for i in range(0, len(evolution)):
-			evo_and_image.append([evolution[i], img[i]])
+		# LISTING NAME AND STYLE TOGETHER
+		evo_list = []
+		while evolution:
+			evo_list.append(evolution.pop(0))
+			if(evolution_styles):
+				evo_list.append(evolution_styles.pop(0))
 
 		# MAIN IMAGE OF THE POKEMON
 		try:
@@ -188,20 +208,23 @@ def get_pokemon_details(name_dict):
 
 		pokedex_data, training, breeding, base_stats = make_table(cleaned_table)
 
-		arrange_data(pokemon, definition, evo_and_image, main_image,
+		arrange_data(pokemon, definition, evo_list, main_image,
 		             counter, pokedex_data, training, breeding, base_stats)
 		counter += 1
 
 # THIS METHOD MODIFIES THE DATA FOR FINAL ENTRY
-def arrange_data(pokemon, definition, evo_and_image, main_image, counter, pokedex_data, training, breeding, base_stats):
 
-	if len(evo_and_image) < 1:
-		evo_and_image = "No Evolution"
+
+def arrange_data(pokemon, definition, evo_list, main_image, counter, pokedex_data, training, breeding, base_stats):
+
+	if len(evo_list) < 1:
+		evo_list = "No Evolution"
 
 	arranged_data = [counter, pokemon, definition, main_image,
-                  evo_and_image, pokedex_data, training, breeding, base_stats]
+                  evo_list, pokedex_data, training, breeding, base_stats]
 	poke_dict.append(arranged_data)
-	# pokemon = Pokemon(counter, pokemon, definition, main_image, evo_and_image)
+	# pokemon = Pokemon(counter, pokemon, definition, main_image, evo_list)
+
 
 if __name__ == '__main__':
 	get_pokemon_details(get_pokemon_names())
