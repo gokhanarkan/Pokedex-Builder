@@ -1,34 +1,11 @@
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from urllib.request import Request
-import csv
-import re
-
-# I am currently not using the Pokemon object. Reference purposes only
-
-
-class Pokemon:
-	def __init__(self, pokeid, name, definition, image, evolution):
-		self.pokeid = pokeid
-		self.name = name
-		self.definition = definition
-		self.image = image
-		self.evolution = evolution
-
+from helper_fuctions import export_csv, clean_tags, is_integer, arrange_data
 
 poke_dict = []
 
-# THIS METHOD EXPORTS INFORMATION AS CSV FILE
-
-
-def export_csv(poke_dict):
-	with open("poke_dict.csv", "w") as file:
-		pokemon_writer = csv.writer(file)
-		pokemon_writer.writerows(poke_dict)
-
-# THIS METHOD CREATES A HTML PAGE FOR SCRAPING
-
-
+# Creating HTML page for scraping
 def make_html(pokemon):
 
 	# Extra caution for nidoran genders and flabebe
@@ -70,18 +47,7 @@ def make_html(pokemon):
 
 	return urlopen(url)
 
-# THIS METHOD GETS STRING WITH HTML CODE AND CLEANS WITH REGULAR EXPRESSION
-
-
-def clean_tags(raw_html):
-
-	cleanr = re.compile('<.*?>')
-	cleantext = re.sub(cleanr, '', raw_html)
-	return cleantext
-
-# THIS METHOD SCRAPES ALL THE POKEMONS CREATED FROM THE DIRECTORY
-
-
+# Scraping all the pokemon names from the directory
 def get_pokemon_names():
 
 	name_dict = []
@@ -95,9 +61,7 @@ def get_pokemon_names():
 
 	return name_dict
 
-# THIS METHOD CREATES TABLE OUT OF MESSY LIST OF INFORMATION
-
-
+# Cleaning the messy information
 def make_table(cleaned_table):
 
 	true_table = limit_table(cleaned_table)
@@ -131,15 +95,19 @@ def make_table(cleaned_table):
 
 	return pokedex_data, training, breeding, base_stats
 
-# Helper function to understand if a string is also a number
+# Limiting length of the table
+# ALTHOUGH THE FURTHER INFORMATION IS NOT NECESSARY FOR ME AT THE MOMENT, YOU CAN CHANGE THE BREAK WITH PASS AND ACCESS ALL THE DATA
+def limit_table(cleaned_table):
 
+	true_table = []
+	for array in cleaned_table:
+		for product in array:
+			if len(true_table) == 56:
+				break
+			if product != '':
+				true_table.append(product)
 
-def is_integer(str):
-	try:
-		int(str)
-		return True
-	except:
-		return False
+	return true_table
 
 
 def get_move_table(chars):
@@ -147,7 +115,6 @@ def get_move_table(chars):
 	# The aim of this function to empty the chars list whilst getting all the relevant information
 	# such as move type, move power and move accuracy
 
-	# Move type is handled here, the first capital string is the move type
 	# The data example is like this without the first digits
 	# { 40Flare BlitzFire 120 100 }
 	first_position = 0
@@ -188,7 +155,7 @@ def get_move_table(chars):
 	return move_table
 
 
-def the_second_law(chars):
+def divide_words(chars):
 
 	# Keeping the first word of the move also counting how many letters does it have
 	first_word = ""
@@ -209,25 +176,7 @@ def the_second_law(chars):
 
 	return move_table
 
-# THIS METHOD LIMITS THE LENGTH OF THE TABLE
-# ALTHOUGH THE FURTHER INFORMATION IS NOT NECESSARY FOR ME AT THE MOMENT, YOU CAN COMMENT THE BREAK AND ACCESS ALL THE DATA
-
-
-def limit_table(cleaned_table):
-
-	true_table = []
-	for array in cleaned_table:
-		for product in array:
-			if len(true_table) == 56:
-				break
-			if product != '':
-				true_table.append(product)
-
-	return true_table
-
-# THIS METHOD SCRAPES THE IMPORTANT INFORMATION FROM POKEDEX PAGE
-
-
+# MAIN SCRAPING FUNCTION
 def get_pokemon_details(name_dict):
 
 	counter = 1
@@ -251,7 +200,7 @@ def get_pokemon_details(name_dict):
 			evo = evo.split(' ')
 			evolution.append(evo[1])
 
-		# EVOLUTION STYLE LIKE WHEN OR HOW ETC.
+		# EVOLUTION STYLE SUCH AS HOW OR WHEN
 		evolution_styles = []
 		for evo in soup.findAll('span', attrs={'class': 'infocard-arrow'}):
 			evo = clean_tags(str(evo))
@@ -272,7 +221,7 @@ def get_pokemon_details(name_dict):
 			artwork = soup.find('img')
 			main_image = artwork['src']
 
-		# VARIOUS TABLE DATA TABLE
+		# VARIOUS DATA TABLE
 		table_data = []
 		# This for loop checks all the fields for table data like breeding, capture chance, type etc.
 		for poketype in soup.findAll('table', attrs={'class': 'vitals-table'}):
@@ -286,7 +235,7 @@ def get_pokemon_details(name_dict):
 
 		pokedex_data, training, breeding, base_stats = make_table(cleaned_table)
 
-		# Checking Moves learnt by level up table
+		# MOVES LEARNT BY LEVEL UP TABLE
 		for move in soup.findAll('div', attrs={'class': 'span-lg-6'}):
 			# Specifically storing the first table, otherwise the for loop gets other tables as well
 			i = move.find('div', attrs={'class': 'resp-scroll'})
@@ -297,7 +246,7 @@ def get_pokemon_details(name_dict):
 		moves = moves.split('\n')
 		# Inspecting every single move
 		moves.pop()  # The last item is empty, it's wise to pop that here
-
+		# List of all the moves of that specific pokemon
 		move_tables = []
 		# BEFORE: I BELIEVE THIS FOR LOOP WILL BE A BIT COMPLEX
 		for move in moves:
@@ -339,8 +288,7 @@ def get_pokemon_details(name_dict):
 					chars.pop(0)
 					chars.pop(0)
 
-					# Sending the rest of the characters to another function. Sorry, I couldn't find a proper name
-					move_table = the_second_law(chars)
+					move_table = divide_words(chars)
 					move_table.update({"move_level": int(move_level)})
 
 				else:
@@ -349,27 +297,14 @@ def get_pokemon_details(name_dict):
 
 					chars.pop(0)
 
-					move_table = the_second_law(chars)
+					move_table = divide_words(chars)
 					move_table.update({"move_level": int(move_level)})
 
 			move_tables.append(move_table)
 
-		arrange_data(pokemon, definition, evo_list, main_image,
-		             counter, pokedex_data, training, breeding, base_stats, move_tables)
+		poke_dict.append(arrange_data(pokemon, definition, evo_list, main_image,
+                                counter, pokedex_data, training, breeding, base_stats, move_tables))
 		counter += 1
-
-# THIS METHOD MODIFIES THE DATA FOR FINAL ENTRY
-
-
-def arrange_data(pokemon, definition, evo_list, main_image, counter, pokedex_data, training, breeding, base_stats, move_tables):
-
-	if len(evo_list) < 1:
-		evo_list = "No Evolution"
-
-	arranged_data = [counter, pokemon, definition, main_image,
-                  evo_list, pokedex_data, training, breeding, base_stats, move_tables]
-	poke_dict.append(arranged_data)
-	# pokemon = Pokemon(counter, pokemon, definition, main_image, evo_list)
 
 
 if __name__ == '__main__':
