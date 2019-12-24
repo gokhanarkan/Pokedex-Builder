@@ -1,43 +1,14 @@
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from urllib.request import Request
-from helper_fuctions import export_csv, clean_tags, is_integer, arrange_data
+from helper_fuctions import export_csv, clean_tags, is_integer, arrange_data, run_precaution
 
 poke_dict = []
 
 # Creating HTML page for scraping
 def make_html(pokemon):
 
-	# Extra caution for nidoran genders and flabebe
-	if pokemon == "Nidoran♀":
-		pokemon = "nidoran-f"
-	if pokemon == "Nidoran♂":
-		pokemon = "nidoran-m"
-	if pokemon == "Flabébé":
-		pokemon = "flabebe"
-
-	# Extra caution for bloody farfetch'd and his mates
-	namelist = list(pokemon)
-	if "'" in namelist:
-		oldname = pokemon.split("'")
-		pokemon = ""
-		for chars in oldname:
-			pokemon += chars
-
-	if pokemon == "Mime Jr.":
-		pokemon = "mime-jr"
-	# Extra caution for Sir Mr. Mime and his bros
-	elif "." in namelist:
-		oldname = pokemon.split(". ")
-		pokemon = oldname[0] + "-" + oldname[1]
-	# For the Pokemon Type: Null
-	elif ":" in namelist:
-		oldname = pokemon.split(": ")
-		pokemon = oldname[0] + "-" + oldname[1]
-	# Tapu Pokemon
-	elif " " in namelist:
-		oldname = pokemon.split(" ")
-		pokemon = oldname[0] + "-" + oldname[1]
+	pokemon = run_precaution(pokemon)
 
 	# Reaching the page and getting HTML entities
 	user_agent = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'

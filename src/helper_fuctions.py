@@ -29,3 +29,39 @@ def arrange_data(pokemon, definition, evo_list, main_image, counter, pokedex_dat
 
 	return [counter, pokemon, definition, main_image,
          evo_list, pokedex_data, training, breeding, base_stats, move_tables]
+
+# Running precautions
+def run_precaution(pokemon):
+
+	# Extra caution for nidoran genders and flabebe
+	if pokemon == "Nidoran♀":
+		pokemon = "nidoran-f"
+	if pokemon == "Nidoran♂":
+		pokemon = "nidoran-m"
+	if pokemon == "Flabébé":
+		pokemon = "flabebe"
+
+	# Extra caution for farfetch'd and his mates
+	namelist = list(pokemon)
+	if "'" in namelist:
+		oldname = pokemon.split("'")
+		pokemon = ""
+		for chars in oldname:
+			pokemon += chars
+
+	if pokemon == "Mime Jr.":
+		pokemon = "mime-jr"
+	# Extra caution for Mr. Mime and his bros
+	elif "." in namelist:
+		oldname = pokemon.split(". ")
+		pokemon = oldname[0] + "-" + oldname[1]
+	# For the Pokemon Type: Null
+	elif ":" in namelist:
+		oldname = pokemon.split(": ")
+		pokemon = oldname[0] + "-" + oldname[1]
+	# Tapu Pokemon
+	elif " " in namelist:
+		oldname = pokemon.split(" ")
+		pokemon = oldname[0] + "-" + oldname[1]
+
+	return pokemon
